@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>职位详情 — 英格玛人才</title>
+<title>职位详情 — 终成国际</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -191,7 +191,7 @@
 <!-- 顶部导航 -->
 <div class="nav-top">
   <a class="nav-back" href="https://qcqf.com/">← 返回</a>
-  <div class="nav-logo">英格玛人才</div>
+  <div class="nav-logo">终成国际</div>
   <div class="nav-share" onclick="openShare()">📤</div>
 </div>
 
@@ -275,7 +275,7 @@ function render() {
     return;
   }
 
-  document.title = job.title + ' — 英格玛人才';
+  document.title = job.title + ' — 终成国际';
   renderJobDetail(job);
 }
 
@@ -288,7 +288,7 @@ function renderJobDetail(job) {
   const html = `
     <!-- 职位头部 -->
     <div class="job-hero">
-      <div class="job-platform">英格玛人才引进信息平台</div>
+      <div class="job-platform">终成国际引进信息平台</div>
       <div class="job-title">${job.title}</div>
       ${job.dept ? `<div class="job-dept-row">📌 ${job.dept}</div>` : ''}
       <div class="job-meta-row">
@@ -386,11 +386,11 @@ function renderJobDetail(job) {
     <div class="section" style="margin-bottom:14px">
       <div class="section-header">
         <div class="icon" style="background:rgba(0,47,167,0.08)">🏢</div>
-        <h2>关于英格玛人才</h2>
+        <h2>关于终成国际</h2>
       </div>
       <div class="section-body">
         <div style="font-size:13px;line-height:1.8;color:var(--text-sub)">
-          英格玛人才引进信息平台，专注于人力资源外包（HRO）、业务流程外包（BPO）及劳务派遣领域的专业人才引进与配置服务。
+          终成国际引进信息平台，专注于人力资源外包（HRO）、业务流程外包（BPO）及劳务派遣领域的专业人才引进与配置服务。
           我们致力于为客户提供高质量、可信赖的人才解决方案。
         </div>
       </div>
@@ -426,7 +426,7 @@ function renderJobDetail(job) {
 
 function renderJobList() {
   const jobs = getAllJobs().filter(j => j.status === 'open');
-  document.title = '招聘职位列表 — 英格玛人才';
+  document.title = '招聘职位列表 — 终成国际';
   document.getElementById('bottomAction').style.display = 'none';
 
   if (jobs.length === 0) {
@@ -442,7 +442,7 @@ function renderJobList() {
 
   const html = `
     <div style="background:linear-gradient(135deg,#002FA7,#1a45b8);color:#fff;padding:24px 18px 18px">
-      <div style="font-size:12px;opacity:0.7;margin-bottom:8px">英格玛人才引进信息平台</div>
+      <div style="font-size:12px;opacity:0.7;margin-bottom:8px">终成国际引进信息平台</div>
       <div style="font-size:22px;font-weight:800;margin-bottom:4px">在招职位</div>
       <div style="font-size:13px;opacity:0.8">共 ${jobs.length} 个职位等您加入</div>
     </div>
