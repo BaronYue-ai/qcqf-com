@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>职位详情 — 英格玛人才</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #002FA7;
+    --primary-light: #1a45b8;
+    --text: #1a1f36;
+    --text-sub: #6b7394;
+    --border: #eef0f6;
+    --bg: #f5f6fa;
+    --success: #00b875;
+    --gold: #f5a623;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+
+  /* 顶部导航 */
+  .nav-top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  }
+  .nav-back {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 14px; color: var(--primary); font-weight: 600;
+    cursor: pointer; text-decoration: none;
+  }
+  .nav-logo { font-size: 13px; color: var(--text-sub); font-weight: 600; }
+  .nav-share {
+    width: 32px; height: 32px; background: var(--bg); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px;
+  }
+
+  /* 主体内容 */
+  .content { padding-top: 60px; padding-bottom: 90px; }
+
+  /* 顶部大头 */
+  .job-hero {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 60%, #0a1f6b 100%);
+    color: #fff; padding: 24px 18px 22px; position: relative; overflow: hidden;
+  }
+  .job-hero::before {
+    content: ''; position: absolute; top: -20px; right: -20px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .job-hero::after {
+    content: ''; position: absolute; bottom: -30px; left: 40%;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .job-platform { font-size: 11px; opacity: 0.65; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .job-title { font-size: 24px; font-weight: 800; line-height: 1.3; margin-bottom: 6px; position: relative; z-index: 1; }
+  .job-meta-row {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; position: relative; z-index: 1;
+  }
+  .meta-chip {
+    background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 20px; font-size: 12px;
+    backdrop-filter: blur(4px);
+  }
+  .job-salary { font-size: 22px; font-weight: 800; color: var(--gold); position: relative; z-index: 1; }
+  .job-dept-row { font-size: 13px; opacity: 0.8; margin-bottom: 12px; position: relative; z-index: 1; }
+
+  /* 状态条 */
+  .status-bar {
+    background: #fff; padding: 12px 18px;
+    display: flex; align-items: center; gap: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .status-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .status-item .val { font-size: 14px; font-weight: 700; color: var(--primary); }
+  .status-item .key { font-size: 10px; color: var(--text-sub); }
+  .status-divider { width: 1px; height: 32px; background: var(--border); }
+
+  /* 标签区 */
+  .tags-section { background: #fff; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .tag { display: inline-block; background: rgba(0,47,167,0.08); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 3px 3px 3px 0; }
+
+  /* 摘要 */
+  .summary-card {
+    margin: 14px 14px 0; background: rgba(0,47,167,0.05); border-left: 3px solid var(--primary);
+    border-radius: 0 8px 8px 0; padding: 12px 14px; font-size: 13px; line-height: 1.7; color: var(--text-sub);
+  }
+
+  /* 内容区块 */
+  .section {
+    background: #fff; margin: 14px 14px 0; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .section-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+  }
+  .section-header .icon.blue { background: rgba(0,47,167,0.1); }
+  .section-header .icon.green { background: rgba(0,184,117,0.1); }
+  .section-header h2 { font-size: 14px; font-weight: 800; color: var(--text); }
+  .section-body { padding: 14px 16px; }
+  .list-item {
+    display: flex; gap: 10px; margin-bottom: 12px; font-size: 13px; line-height: 1.7;
+    align-items: flex-start;
+  }
+  .list-item:last-child { margin-bottom: 0; }
+  .list-num {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--primary);
+    color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .list-check {
+    width: 18px; height: 18px; color: var(--success); font-size: 14px;
+    flex-shrink: 0; margin-top: 2px; font-weight: 700;
+  }
+
+  /* 底部固定按钮 */
+  .bottom-action {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border); padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .apply-btn {
+    display: block; background: var(--primary); color: #fff;
+    text-align: center; padding: 14px; border-radius: 12px;
+    font-size: 16px; font-weight: 700; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .apply-btn:active { background: var(--primary-light); transform: scale(0.98); }
+  .apply-btn.disabled {
+    background: #c5cbe8; cursor: not-allowed;
+  }
+  .bottom-sub { display: flex; justify-content: center; gap: 20px; }
+  .bottom-sub-item { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 4px; }
+
+  /* 加载/错误状态 */
+  .loading, .error-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 60vh; color: var(--text-sub); gap: 12px;
+  }
+  .loading .spin { font-size: 36px; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-state .icon { font-size: 48px; }
+
+  /* 分享弹层 */
+  .share-popup {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .share-popup.show { display: flex; }
+  .share-sheet {
+    background: #fff; width: 100%; border-radius: 20px 20px 0 0; padding: 24px 18px;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .share-title { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 20px; }
+  .share-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .share-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .share-item .sicon {
+    width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center;
+    justify-content: center; font-size: 22px;
+  }
+  .share-item span { font-size: 11px; color: var(--text-sub); }
+  .share-cancel {
+    display: block; text-align: center; padding: 14px; background: var(--bg);
+    border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--text);
+    cursor: pointer;
+  }
+
+  /* 无内容占位 */
+  .empty-section { text-align: center; padding: 20px; color: var(--text-sub); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="nav-top">
+  <a class="nav-back" href="https://qcqf.com/">← 返回</a>
+  <div class="nav-logo">英格玛人才</div>
+  <div class="nav-share" onclick="openShare()">📤</div>
+</div>
+
+<div class="content" id="mainContent">
+  <div class="loading" id="loadingState">
+    <div class="spin">⚙️</div>
+    <div>加载中...</div>
+  </div>
+</div>
+
+<!-- 底部按钮区（动态渲染） -->
+<div class="bottom-action" id="bottomAction" style="display:none">
+  <a href="#" class="apply-btn disabled" id="applyBtn" target="_blank">📝 投递简历</a>
+  <div class="bottom-sub">
+    <div class="bottom-sub-item">📞 <span id="contactText">联系HR</span></div>
+    <div class="bottom-sub-item">📤 <span onclick="openShare()">分享职位</span></div>
+  </div>
+</div>
+
+<!-- 分享弹层 -->
+<div class="share-popup" id="sharePopup" onclick="if(event.target===this)closeShare()">
+  <div class="share-sheet">
+    <div class="share-title">分享该职位</div>
+    <div class="share-grid">
+      <div class="share-item" onclick="shareWechat()">
+        <div class="sicon" style="background:#e8f5e9">💬</div>
+        <span>微信好友</span>
+      </div>
+      <div class="share-item" onclick="shareMoments()">
+        <div class="sicon" style="background:#e3f2fd">🌐</div>
+        <span>朋友圈</span>
+      </div>
+      <div class="share-item" onclick="copyLink()">
+        <div class="sicon" style="background:#f3e5f5">🔗</div>
+        <span>复制链接</span>
+      </div>
+      <div class="share-item" onclick="window.print()">
+        <div class="sicon" style="background:#fff3e0">🖨️</div>
+        <span>打印</span>
+      </div>
+    </div>
+    <div class="share-cancel" onclick="closeShare()">取消</div>
+  </div>
+</div>
+
+<script>
+// ==================== 数据获取 ====================
+function getJobData(id) {
+  try {
+    const jobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
+    return jobs.find(j => j.id === id) || null;
+  } catch { return null; }
+}
+
+function getAllJobs() {
+  try { return JSON.parse(localStorage.getItem('engma_jobs') || '[]'); } catch { return []; }
+}
+
+// ==================== 渲染 ====================
+function render() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+
+  if (!id) {
+    // 没有ID，显示所有职位列表（用于分享页兜底）
+    renderJobList();
+    return;
+  }
+
+  const job = getJobData(id);
+  if (!job) {
+    document.getElementById('mainContent').innerHTML = `
+      <div class="error-state">
+        <div class="icon">🔍</div>
+        <div style="font-size:15px;font-weight:600">职位未找到</div>
+        <div style="font-size:13px">该职位可能已下线或链接有误</div>
+        <a href="https://qcqf.com/job-admin/index.html" style="color:var(--primary);font-size:13px;margin-top:8px">← 返回主页</a>
+      </div>
+    `;
+    document.title = '职位未找到';
+    return;
+  }
+
+  document.title = job.title + ' — 英格玛人才';
+  renderJobDetail(job);
+}
+
+function renderJobDetail(job) {
+  const tags = (job.tags||[]).map(t => `<span class="tag">${t}</span>`).join('');
+  const duties = (job.duties||[]);
+  const requirements = (job.requirements||[]);
+  const benefits = (job.benefits||[]);
+
+  const html = `
+    <!-- 职位头部 -->
+    <div class="job-hero">
+      <div class="job-platform">英格玛人才引进信息平台</div>
+      <div class="job-title">${job.title}</div>
+      ${job.dept ? `<div class="job-dept-row">📌 ${job.dept}</div>` : ''}
+      <div class="job-meta-row">
+        ${job.city ? `<span class="meta-chip">📍 ${job.city}</span>` : ''}
+        ${job.type ? `<span class="meta-chip">💼 ${job.type}</span>` : ''}
+        ${job.experience ? `<span class="meta-chip">⏱ ${job.experience}</span>` : ''}
+        ${job.education ? `<span class="meta-chip">🎓 ${job.education}</span>` : ''}
+        ${job.headcount ? `<span class="meta-chip">👥 ${job.headcount}</span>` : ''}
+      </div>
+      ${job.salary ? `<div class="job-salary">${job.salary}</div>` : ''}
+    </div>
+
+    <!-- 状态条 -->
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="val">${job.headcount||'若干'}</div>
+        <div class="key">招聘人数</div>
+      </div>
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <div class="val">${job.experience||'不限'}</div>
+        <div class="key">工作经验</div>
+      </div>
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <div class="val">${job.education||'不限'}</div>
+        <div class="key">学历要求</div>
+      </div>
+      ${job.deadline ? `
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <div class="val" style="font-size:12px">${job.deadline}</div>
+        <div class="key">截止日期</div>
+      </div>` : ''}
+    </div>
+
+    <!-- 标签 -->
+    ${tags ? `<div class="tags-section">${tags}</div>` : ''}
+
+    <!-- 摘要 -->
+    ${job.summary ? `<div class="summary-card">${job.summary}</div>` : ''}
+
+    <!-- 岗位职责 -->
+    ${duties.length ? `
+    <div class="section">
+      <div class="section-header">
+        <div class="icon blue">📋</div>
+        <h2>岗位职责</h2>
+      </div>
+      <div class="section-body">
+        ${duties.map((d,i) => `
+          <div class="list-item">
+            <div class="list-num">${i+1}</div>
+            <div>${d}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- 任职要求 -->
+    ${requirements.length ? `
+    <div class="section">
+      <div class="section-header">
+        <div class="icon blue">✅</div>
+        <h2>任职要求</h2>
+      </div>
+      <div class="section-body">
+        ${requirements.map((r,i) => `
+          <div class="list-item">
+            <div class="list-num">${i+1}</div>
+            <div>${r}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- 福利待遇 -->
+    ${benefits.length ? `
+    <div class="section">
+      <div class="section-header">
+        <div class="icon green">🎁</div>
+        <h2>福利待遇</h2>
+      </div>
+      <div class="section-body">
+        ${benefits.map(b => `
+          <div class="list-item">
+            <div class="list-check">✓</div>
+            <div>${b}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- 关于平台 -->
+    <div class="section" style="margin-bottom:14px">
+      <div class="section-header">
+        <div class="icon" style="background:rgba(0,47,167,0.08)">🏢</div>
+        <h2>关于英格玛人才</h2>
+      </div>
+      <div class="section-body">
+        <div style="font-size:13px;line-height:1.8;color:var(--text-sub)">
+          英格玛人才引进信息平台，专注于人力资源外包（HRO）、业务流程外包（BPO）及劳务派遣领域的专业人才引进与配置服务。
+          我们致力于为客户提供高质量、可信赖的人才解决方案。
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('mainContent').innerHTML = html;
+
+  // 底部按钮
+  const bottomAction = document.getElementById('bottomAction');
+  const applyBtn = document.getElementById('applyBtn');
+  bottomAction.style.display = 'flex';
+
+  if (job.applyUrl) {
+    applyBtn.href = job.applyUrl;
+    applyBtn.classList.remove('disabled');
+    applyBtn.textContent = '📝 立即投递简历';
+    applyBtn.removeAttribute('onclick');
+  } else {
+    applyBtn.href = '#';
+    applyBtn.className = 'apply-btn disabled';
+    applyBtn.textContent = '📝 投递链接配置中';
+    applyBtn.setAttribute('onclick', 'return false');
+  }
+
+  if (job.contact) {
+    document.getElementById('contactText').textContent = job.contact;
+  }
+
+  // 隐藏加载态
+  document.getElementById('loadingState').style.display = 'none';
+}
+
+function renderJobList() {
+  const jobs = getAllJobs().filter(j => j.status === 'open');
+  document.title = '招聘职位列表 — 英格玛人才';
+  document.getElementById('bottomAction').style.display = 'none';
+
+  if (jobs.length === 0) {
+    document.getElementById('mainContent').innerHTML = `
+      <div class="error-state">
+        <div class="icon">📭</div>
+        <div style="font-size:15px;font-weight:600">暂无在招职位</div>
+        <div style="font-size:13px">请稍后再来查看</div>
+      </div>
+    `;
+    return;
+  }
+
+  const html = `
+    <div style="background:linear-gradient(135deg,#002FA7,#1a45b8);color:#fff;padding:24px 18px 18px">
+      <div style="font-size:12px;opacity:0.7;margin-bottom:8px">英格玛人才引进信息平台</div>
+      <div style="font-size:22px;font-weight:800;margin-bottom:4px">在招职位</div>
+      <div style="font-size:13px;opacity:0.8">共 ${jobs.length} 个职位等您加入</div>
+    </div>
+    <div style="padding:14px">
+      ${jobs.map(job => `
+        <a href="https://qcqf.com/job-detail.html?id=${job.id}" style="display:block;background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);text-decoration:none;color:inherit">
+          <div style="font-size:16px;font-weight:700;color:#002FA7;margin-bottom:6px">${job.title}</div>
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px">${[job.dept,job.city].filter(Boolean).join(' · ')}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:15px;font-weight:700;color:#f5a623">${job.salary||'薪资面议'}</span>
+            <span style="font-size:11px;background:rgba(0,47,167,0.1);color:#002FA7;padding:3px 10px;border-radius:20px;font-weight:600">${job.type||'全职'}</span>
+          </div>
+        </a>
+      `).join('')}
+    </div>
+  `;
+
+  document.getElementById('mainContent').innerHTML = html;
+  document.getElementById('loadingState').style.display = 'none';
+}
+
+// ==================== 分享功能 ====================
+function openShare() { document.getElementById('sharePopup').classList.add('show'); }
+function closeShare() { document.getElementById('sharePopup').classList.remove('show'); }
+
+function copyLink() {
+  navigator.clipboard.writeText(location.href).then(() => {
+    closeShare();
+    showToast('链接已复制 ✓');
+  });
+}
+
+function shareWechat() {
+  copyLink();
+  // 在真实环境中可调用微信JS-SDK
+}
+
+function shareMoments() {
+  copyLink();
+}
+
+// ==================== Toast ====================
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;font-weight:600';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// 初始化
+render();
+</script>
+</body>
+</html>
