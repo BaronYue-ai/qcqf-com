@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>职位管理后台 — 英格玛人才</title>
+<title>职位管理后台 — 终成国际</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
@@ -382,7 +382,7 @@
     <div class="sidebar-logo">
       <div class="logo-icon">💼</div>
       <h1>职位管理后台</h1>
-      <p>英格玛人才引进平台</p>
+      <p>终成国际引进平台</p>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-group-label">核心功能</div>
@@ -404,7 +404,7 @@
         <span class="icon">📱</span><span>二维码中心</span>
       </div>
     </nav>
-    <div class="sidebar-footer">© 2026 英格玛人才</div>
+    <div class="sidebar-footer">© 2026 终成国际</div>
   </aside>
 
   <!-- 主内容 -->
@@ -654,7 +654,7 @@
                     <div class="poster-bg" id="posterBg"></div>
                     <div class="poster-pattern"></div>
                     <div class="poster-content">
-                      <div class="poster-company" id="pd-company">英格玛人才引进信息平台</div>
+                      <div class="poster-company" id="pd-company">终成国际引进信息平台</div>
                       <div class="poster-job-title" id="pd-title">请选择职位</div>
                       <div class="poster-dept" id="pd-dept">—</div>
                       <div class="poster-tags" id="pd-tags"></div>
@@ -697,7 +697,7 @@
                   <div style="display:flex;flex-direction:column;gap:10px">
                     <div class="form-group">
                       <label class="form-label">公司/平台名称</label>
-                      <input type="text" class="form-input" id="posterCompany" value="英格玛人才引进信息平台" oninput="updatePosterPreview()">
+                      <input type="text" class="form-input" id="posterCompany" value="终成国际引进信息平台" oninput="updatePosterPreview()">
                     </div>
                     <div class="form-group">
                       <label class="form-label">号召语（CTA）</label>
@@ -1124,7 +1124,7 @@ function buildJobDetailHtml(job) {
 <div style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:#1a1f36">
   <!-- 头部 -->
   <div style="background:linear-gradient(135deg,#002FA7,#1a45b8);color:#fff;padding:20px 18px">
-    <div style="font-size:11px;opacity:0.7;margin-bottom:6px;letter-spacing:1px">英格玛人才引进信息平台</div>
+    <div style="font-size:11px;opacity:0.7;margin-bottom:6px;letter-spacing:1px">终成国际引进信息平台</div>
     <div style="font-size:20px;font-weight:800;margin-bottom:6px;line-height:1.3">${job.title}</div>
     ${job.dept?`<div style="font-size:13px;opacity:0.85;margin-bottom:10px">${job.dept}</div>`:''}
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
@@ -1212,7 +1212,7 @@ function updatePosterPreview(jobObj) {
   const job = jobObj || getJobById(id);
   if (!job) return;
 
-  document.getElementById('pd-company').textContent = document.getElementById('posterCompany').value || '英格玛人才引进信息平台';
+  document.getElementById('pd-company').textContent = document.getElementById('posterCompany').value || '终成国际引进信息平台';
   document.getElementById('pd-title').textContent = job.title;
   document.getElementById('pd-dept').textContent = [job.dept, job.city, job.salary].filter(Boolean).join(' · ') || '—';
 
