@@ -6,6 +6,7 @@
 <title>职位管理后台 — 终成国际人才</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
 <style>
   /* ===== 全局重置 ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -842,16 +843,101 @@
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
-// ==================== 数据层 ====================
-let jobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
+// ==================== 云数据库层 ====================
+const TCB_ENV = 'zchroa-d3gumx2ew7e37e075';
+let app = null;
+let db = null;
+let jobs = [];         // 内存缓存
 let editingId = null;
 let currentPosterGrad = 'linear-gradient(145deg, #002FA7 0%, #1a45b8 50%, #0a1f6b 100%)';
 let currentTags = [];
+let cloudReady = false; // 云端是否就绪
 
 const BASE_URL = 'https://qcqf.com/job-detail.html';
+const COLL = 'jobs';
 
+// 初始化云开发
+function initCloud() {
+  app = cloudbase.init({ env: TCB_ENV });
+  db = app.database();
+
+  // 匿名登录（无需账号，自动生成匿名身份）
+  app.auth({ persistence: 'local' }).anonymousAuthProvider()
+    .signIn()
+    .then(() => {
+      cloudReady = true;
+      loadFromCloud();
+    })
+    .catch(() => {
+      console.warn('云登录失败，降级为本地模式');
+      cloudReady = false;
+      loadFromLocal();
+    });
+}
+
+// 从云数据库加载
+function loadFromCloud() {
+  if (!db) return;
+  db.collection(COLL)
+    .orderBy('createdAt', 'desc')
+    .get()
+    .then(res => {
+      jobs = res.data || [];
+      saveData();
+      updateStats();
+      renderDashboard();
+    })
+    .catch(() => {
+      loadFromLocal();
+    });
+}
+
+// 从本地缓存加载
+function loadFromLocal() {
+  try {
+    jobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
+  } catch {
+    jobs = [];
+  }
+  if (jobs.length > 0 && cloudReady) {
+    syncLocalToCloud();
+  }
+  updateStats();
+  renderDashboard();
+}
+
+// 一次性迁移本地数据到云
+function syncLocalToCloud() {
+  if (!cloudReady || !db) return;
+  const localJobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
+  localJobs.forEach(job => {
+    db.collection(COLL).add({ data: job }).catch(() => {});
+  });
+}
+
+// 保存到本地缓存
 function saveData() {
   localStorage.setItem('engma_jobs', JSON.stringify(jobs));
+}
+
+// 云端写操作（双写：云 + 本地）
+function cloudAdd(job) {
+  if (!cloudReady || !db) return;
+  db.collection(COLL).add({ data: job }).then(res => {
+    if (res.ids && res.ids[0]) job._id = res.ids[0];
+  }).catch(err => console.warn('云写入失败:', err));
+}
+
+function cloudUpdate(job) {
+  if (!cloudReady || !db) return;
+  const id = job._id || job.id;
+  if (!id) return;
+  db.collection(COLL).doc(id).update(job).catch(err => console.warn('云更新失败:', err));
+}
+
+function cloudDelete(id) {
+  if (!cloudReady || !db) return;
+  db.collection(COLL).doc(id).remove().catch(err => console.warn('云删除失败:', err));
 }
 
 function genId() {
@@ -1006,11 +1092,14 @@ function saveJob() {
   if (editingId) {
     const idx = jobs.findIndex(j => j.id === editingId);
     job.shared = jobs[idx].shared;
+    job._id = jobs[idx]._id;
     jobs[idx] = job;
     showToast('职位已更新 ✓', 'success');
+    cloudUpdate(job); // 云端更新
   } else {
     jobs.unshift(job);
     showToast('职位已保存 ✓', 'success');
+    cloudAdd(job); // 云端新增
   }
 
   saveData();
@@ -1052,10 +1141,12 @@ function editJob(id) {
 function deleteJob(id) {
   const job = getJobById(id);
   if (!confirm(`确认删除职位「${job?.title}」？此操作不可恢复。`)) return;
+  const delJob = jobs.find(j => j.id === id);
   jobs = jobs.filter(j => j.id !== id);
   saveData();
   updateStats();
   renderJobList();
+  if (delJob) cloudDelete(delJob._id || id); // 云端删除
   showToast('职位已删除', 'info');
 }
 
@@ -1450,35 +1541,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 
 // ==================== 初始化 ====================
 (function init() {
-  // 加载示例数据
-  if (jobs.length === 0) {
-    const demo = {
-      id: genId(),
-      title: '业务总监',
-      dept: '销售部',
-      city: '上海',
-      type: '全职',
-      salary: '20K-35K·13薪',
-      headcount: '2人',
-      education: '本科',
-      experience: '5年以上',
-      status: 'open',
-      deadline: '2026-06-30',
-      tags: ['急招','五险一金','年终奖','弹性上班'],
-      summary: '负责人力资源外包、制造外包等业务的拓展与维护，带领团队完成年度销售目标。',
-      duties: '<p>渠道拓宽与业务开拓（人事外包、制造外包、staffing）</p><p>商务谈判与合同签订</p><p>客户关系管理（拜访、异议处理、需求深挖）</p><p>项目支持与指导（调研、方案准备、客户维护）</p><p>内部协同与汇报（阿米巴事务、定期汇报）</p>',
-      requirements: '<p>5年以上销售经验，人力资源、BPO、staffing行业背景优先</p><p>具备独立开发新市场能力，500强/国央企/外企经验优先</p><p>学习能力强，沟通能力优秀</p><p>性格外向、敏捷，抗压能力强</p>',
-      benefits: ['五险一金', '年终奖（3-6个月）', '弹性工作制', '带薪年假15天', '团队建设活动'],
-      applyUrl: '',
-      contact: 'hr@engma.co',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      shared: false
-    };
-    jobs.push(demo);
-    saveData();
-  }
-
+  initCloud(); // 云端优先初始化
   updateStats();
   renderDashboard();
   resetForm();
