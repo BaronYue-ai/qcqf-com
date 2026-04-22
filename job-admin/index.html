@@ -6,7 +6,6 @@
 <title>职位管理后台 — 终成国际人才</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
 <style>
   /* ===== 全局重置 ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -843,101 +842,137 @@
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
-// ==================== 云数据库层 ====================
-const TCB_ENV = 'zchroa-d3gumx2ew7e37e075';
-let app = null;
-let db = null;
-let jobs = [];         // 内存缓存
+// ==================== 云数据库层（通过 Cloudflare Worker 代理）====================
+const TCB_ENV   = 'zchroa-d3gumx2ew7e37e075';
+const COLL      = 'jobs';
+const WORKER_URL = 'https://tcb-proxy.yuebangrui1990.workers.dev';
+
+let jobs = [];
 let editingId = null;
 let currentPosterGrad = 'linear-gradient(145deg, #002FA7 0%, #1a45b8 50%, #0a1f6b 100%)';
 let currentTags = [];
-let cloudReady = false; // 云端是否就绪
 
 const BASE_URL = 'https://qcqf.com/job-detail.html';
-const COLL = 'jobs';
 
-// 初始化云开发
+// 调用云数据库（密钥由 Worker 代签，前端不接触密钥）
+async function tcbRequest(action, payload) {
+  try {
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, payload })
+    });
+    const json = await resp.json();
+    if (json.Error) { console.warn('TCB Error:', json.Error); return null; }
+    return json.Response || null;
+  } catch (e) {
+    console.warn('Worker 请求失败:', e);
+    return null;
+  }
+}
+
+// ==================== 数据操作 ====================
 function initCloud() {
-  app = cloudbase.init({ env: TCB_ENV });
-  db = app.database();
-
-  // 匿名登录（无需账号，自动生成匿名身份）
-  app.auth({ persistence: 'local' }).anonymousAuthProvider()
-    .signIn()
-    .then(() => {
-      cloudReady = true;
-      loadFromCloud();
-    })
-    .catch(() => {
-      console.warn('云登录失败，降级为本地模式');
-      cloudReady = false;
-      loadFromLocal();
-    });
+  loadFromCloud();
 }
 
-// 从云数据库加载
-function loadFromCloud() {
-  if (!db) return;
-  db.collection(COLL)
-    .orderBy('createdAt', 'desc')
-    .get()
-    .then(res => {
-      jobs = res.data || [];
-      saveData();
-      updateStats();
-      renderDashboard();
-    })
-    .catch(() => {
-      loadFromLocal();
+async function loadFromCloud() {
+  try {
+    const res = await tcbRequest('DatabaseQuery', {
+      EnvId: TCB_ENV,
+      CollectionName: COLL,
+      QueryType: 'AND',
+      Selector: { FieldName: '', Type: 'string' },
+      Limit: 100
     });
+    if (res && res.Data && res.Data.length > 0) {
+      // 格式化数据
+      jobs = res.Data.map(item => {
+        if (item.record) return { ...item.record, _id: item._id };
+        return { ...item, _id: item._id };
+      });
+    } else {
+      // 云端为空，降级本地
+      loadFromLocal();
+      return;
+    }
+  } catch (e) {
+    console.warn('云加载失败，降级本地:', e);
+    loadFromLocal();
+    return;
+  }
+  saveData();
+  updateStats();
+  renderDashboard();
 }
 
-// 从本地缓存加载
 function loadFromLocal() {
   try {
     jobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
   } catch {
     jobs = [];
   }
-  if (jobs.length > 0 && cloudReady) {
-    syncLocalToCloud();
-  }
   updateStats();
   renderDashboard();
 }
 
-// 一次性迁移本地数据到云
-function syncLocalToCloud() {
-  if (!cloudReady || !db) return;
-  const localJobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
-  localJobs.forEach(job => {
-    db.collection(COLL).add({ data: job }).catch(() => {});
-  });
-}
-
-// 保存到本地缓存
 function saveData() {
   localStorage.setItem('engma_jobs', JSON.stringify(jobs));
 }
 
-// 云端写操作（双写：云 + 本地）
-function cloudAdd(job) {
-  if (!cloudReady || !db) return;
-  db.collection(COLL).add({ data: job }).then(res => {
-    if (res.ids && res.ids[0]) job._id = res.ids[0];
-  }).catch(err => console.warn('云写入失败:', err));
+// 云端写操作（双写）
+async function cloudAdd(job) {
+  try {
+    const res = await tcbRequest('DatabaseInsert', {
+      EnvId: TCB_ENV,
+      CollectionName: COLL,
+      Data: [job]
+    });
+    if (res && res.InsertedIds) {
+      job._id = res.InsertedIds[0];
+    }
+  } catch (e) {
+    console.warn('云新增失败:', e);
+  }
 }
 
-function cloudUpdate(job) {
-  if (!cloudReady || !db) return;
-  const id = job._id || job.id;
-  if (!id) return;
-  db.collection(COLL).doc(id).update(job).catch(err => console.warn('云更新失败:', err));
+async function cloudUpdate(job) {
+  try {
+    const id = job._id || job.id;
+    if (!id) return;
+    await tcbRequest('DatabaseUpdate', {
+      EnvId: TCB_ENV,
+      CollectionName: COLL,
+      QueryType: 'AND',
+      Operator: 'and',
+      FieldConditions: [{
+        FieldName: '_id',
+        Operator: 'eq',
+        Value: id
+      }],
+      UpdateData: job
+    });
+  } catch (e) {
+    console.warn('云更新失败:', e);
+  }
 }
 
-function cloudDelete(id) {
-  if (!cloudReady || !db) return;
-  db.collection(COLL).doc(id).remove().catch(err => console.warn('云删除失败:', err));
+async function cloudDelete(id) {
+  try {
+    await tcbRequest('DatabaseDelete', {
+      EnvId: TCB_ENV,
+      CollectionName: COLL,
+      QueryType: 'AND',
+      Operator: 'and',
+      FieldConditions: [{
+        FieldName: '_id',
+        Operator: 'eq',
+        Value: id
+      }]
+    });
+  } catch (e) {
+    console.warn('云删除失败:', e);
+  }
 }
 
 function genId() {
