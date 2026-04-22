@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>职位详情 — 终成国际人才</title>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -256,20 +257,48 @@
 </div>
 
 <script>
-// ==================== 数据获取 ====================
+// ==================== 云数据库层 ====================
+const TCB_ENV = 'zchroa-d3gumx2ew7e37e075';
+const COLL = 'jobs';
+let app = null, db = null, cloudReady = false;
+let jobs = [];
+
+function initCloud() {
+  app = cloudbase.init({ env: TCB_ENV });
+  db = app.database();
+  app.auth({ persistence: 'local' }).anonymousAuthProvider()
+    .signIn().then(() => {
+      cloudReady = true;
+      loadJobs();
+    }).catch(() => {
+      loadFromLocal();
+    });
+}
+
+function loadFromLocal() {
+  try { jobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]'); } catch { jobs = []; }
+  renderPage();
+}
+
+function loadJobs() {
+  if (!db) return;
+  db.collection(COLL).orderBy('createdAt', 'desc').get().then(res => {
+    jobs = res.data || [];
+    renderPage();
+  }).catch(() => loadFromLocal());
+}
+
+// 兼容旧接口：直接返回缓存（渲染在 loadJobs 之后）
 function getJobData(id) {
-  try {
-    const jobs = JSON.parse(localStorage.getItem('engma_jobs') || '[]');
-    return jobs.find(j => j.id === id) || null;
-  } catch { return null; }
+  return jobs.find(j => j.id === id) || null;
 }
 
 function getAllJobs() {
-  try { return JSON.parse(localStorage.getItem('engma_jobs') || '[]'); } catch { return []; }
+  return jobs;
 }
 
 // ==================== 渲染 ====================
-function render() {
+function renderPage() {
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
 
@@ -498,7 +527,7 @@ function showToast(msg) {
 }
 
 // 初始化
-render();
+initCloud();
 </script>
 </body>
 </html>
